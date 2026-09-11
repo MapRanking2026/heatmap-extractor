@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Heatmap Extractor · Map Ranking</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="dot"></span> Heatmap Extractor
+      </div>
+      <div id="sessionBox" class="session"></div>
+    </header>
+
+    <main class="wrap">
+      <!-- LOGIN -->
+      <section id="loginCard" class="card hidden">
+        <h2>Sign in to the Map Ranking dashboard</h2>
+        <p class="muted">
+          Your login is used only on this computer to open the dashboard and grab the heatmaps.
+          It is never sent anywhere else.
+        </p>
+        <label>Email<input id="email" type="email" autocomplete="username" placeholder="admin@mapranking.com" /></label>
+        <label>Password<input id="password" type="password" autocomplete="current-password" placeholder="••••••••" /></label>
+        <label class="row"><input id="remember" type="checkbox" /> Remember on this computer</label>
+        <button id="loginBtn" class="primary">Sign in</button>
+        <div id="loginError" class="error"></div>
+      </section>
+
+      <!-- MAIN -->
+      <section id="app" class="hidden">
+        <div class="card">
+          <h2>1 · Choose a client</h2>
+          <div class="field">
+            <input id="clientSearch" list="clientList" placeholder="Search or select a client…" autocomplete="off" />
+            <datalist id="clientList"></datalist>
+            <button id="loadKeywordsBtn" class="primary">Load keywords</button>
+          </div>
+          <div id="clientMeta" class="muted"></div>
+        </div>
+
+        <div id="step2" class="card hidden">
+          <h2>2 · What to export</h2>
+
+          <div class="grid2">
+            <div>
+              <h3>Keyword status</h3>
+              <label class="row"><input type="radio" name="status" value="active" checked /> Active only</label>
+              <label class="row"><input type="radio" name="status" value="paused" /> Paused only</label>
+              <label class="row"><input type="radio" name="status" value="all" /> All</label>
+            </div>
+
+            <div>
+              <h3>Comparison</h3>
+              <label class="row"><input type="radio" name="mode" value="current_vs_previous" checked /> This month vs last month</label>
+              <label class="row"><input type="radio" name="mode" value="since_beginning" /> Since the beginning → now</label>
+              <label class="row"><input type="radio" name="mode" value="all_consecutive" /> Every month-over-month (all snapshots)</label>
+              <label class="row"><input type="radio" name="mode" value="custom" /> Pick two months…</label>
+              <div id="customRange" class="custom hidden">
+                <label>From <select id="beforeMonth"></select></label>
+                <label>To <select id="afterMonth"></select></label>
+                <div class="muted small">Month lists come from the selected keywords' available scans.</div>
+              </div>
+            </div>
+          </div>
+
+          <h3>Keywords <span id="kwCount" class="muted"></span></h3>
+          <div class="kwtools">
+            <button id="selectAll" class="link">Select all</button>
+            <button id="selectNone" class="link">Clear</button>
+          </div>
+          <div id="keywordList" class="kwlist"></div>
+        </div>
+
+        <div id="step3" class="card hidden">
+          <h2>3 · Export</h2>
+          <label class="row"><input id="showBrowser" type="checkbox" checked /> Show the browser while it runs (recommended the first time)</label>
+          <button id="exportBtn" class="primary big">Export heatmap comparisons → ZIP</button>
+          <div id="exportSummary" class="muted"></div>
+
+          <div id="progressBox" class="progress hidden">
+            <div id="log" class="log"></div>
+            <a id="downloadLink" class="primary big hidden" href="#">⬇ Download ZIP</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
