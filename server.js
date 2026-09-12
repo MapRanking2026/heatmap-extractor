@@ -4,6 +4,7 @@
 
 import express from "express";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
 import archiver from "archiver";
@@ -14,9 +15,28 @@ import { resolvePairs, pairLabel } from "./src/compare.js";
 import { runExport } from "./src/exporter.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const CONFIG_DIR = path.join(__dirname, "config");
+
+// Pick a writable base for output/config. Prefer next to the app (so the user
+// finds their files), but fall back to the OS temp dir if that root is
+// read-only (e.g. a serverless/container filesystem).
+function writableBase() {
+  try {
+    const probe = path.join(__dirname, ".write-test");
+    fs.writeFileSync(probe, "ok");
+    fs.rmSync(probe, { force: true });
+    return __dirname;
+  } catch {
+    const alt = path.join(os.tmpdir(), "heatmap-extractor");
+    fs.mkdirSync(alt, { recursive: true });
+    console.warn(`\n  [warn] App directory is read-only; writing output to ${alt}\n`);
+    return alt;
+  }
+}
+
+const BASE_DIR = writableBase();
+const CONFIG_DIR = path.join(BASE_DIR, "config");
 const CRED_FILE = path.join(CONFIG_DIR, "credentials.json");
-const OUTPUT_DIR = path.join(__dirname, "output");
+const OUTPUT_DIR = path.join(BASE_DIR, "output");
 const PORT = process.env.PORT || 3000;
 
 const app = express();
