@@ -1,78 +1,41 @@
 # Heatmap Extractor
 
-One-button export of **Map Ranking geogrid heatmap comparisons** for any client —
-current vs previous month (or any range you pick), for all active keywords,
-delivered as a **ZIP of PNGs** you can email to clients or drop into reports.
+Exports the real MapRanking **Ranking comparison** screen as PNGs in a ZIP. Choose any client profile, or several profiles, and all active scans are selected by default.
 
-It logs into your `dashboard.mapranking.com` account, opens each keyword's
-**Ranking comparison** (the native Before/After view), and screenshots it — no
-going keyword-by-keyword by hand.
+## Start
 
-## What it does
+Run `npm install` once, then `npm start` in this folder. Open http://127.0.0.1:3000.
 
-1. **Pick a client** — searchable dropdown of every business in your account.
-2. **Pick what to export**
-   - Keyword status: **Active** (default), Paused, or All.
-   - Comparison: **This month vs last month** (default), **Since the beginning → now**,
-     **Every month-over-month**, or **Pick two months**.
-   - Tick the exact keywords (defaults to all that have ≥2 months of scans).
-3. **Export** → the tool drives the dashboard and saves one comparison PNG per
-   keyword, then hands you a ZIP.
+The server reads only `MAPRANKING_LOGIN_EMAIL` and `MAPRANKING_LOGIN_PASSWORD` from `E:\motsv7\apps\seoos\.env` and `.env.local`. Set `MTOS_ROOT` if MTOS 7 is somewhere else. Process environment settings can override the two login values. The extractor does not change MTOS files or copy their secrets. Legacy `config/credentials.json` is supported only as a fallback. Manual sign-in is kept in memory for the session.
 
-## Setup (one time)
+## Export
 
-Requires **Node.js 18+** (Windows).
+1. Search and select one or multiple client profiles by name and address.
+2. Load the profiles. Choose active, paused, or all scans.
+3. Choose the comparison and optionally clear individual scans.
+4. Export and download the ZIP. A folder identifies each profile by name and unique ID.
 
-```bash
-npm install
-```
+Current vs previous means the actual current UTC calendar month and the immediately preceding month. The latest **completed** report in each exact month is used. A missing month is listed as skipped; it is never replaced by an older month. Custom dates follow the same exact-month rule. Consecutive comparisons never bridge a missing month.
 
-That also downloads the browser engine (Chromium, ~130 MB) the tool uses to open
-the dashboard.
+Active status comes from the dashboard's actual `paused` setting, not scan age. Each distinct scan configuration is preserved even when two have the same keyword. Every list page and each scan's full history are fetched.
 
-## Run
+The comparison uses the dashboard's native map rendering and metrics. Date options are selected using report IDs. The capture verifies the report's profile, scan and keyword identities, the selected date IDs, and the rendered pin labels. It uses existing completed reports and does not run new scans.
 
-```bash
-npm start
-```
+## Output and completeness
 
-Then open **http://localhost:3000** and sign in with your Map Ranking dashboard
-email + password. Tick *Remember on this computer* to skip it next time.
+`output/<job-id>/` contains the PNGs, a text manifest, a JSON manifest, and job status. The ZIP contains only verified PNGs and manifests; debug screenshots are excluded. Failed and skipped captures are explicitly listed. A partial ZIP is labelled **PARTIAL**. No verified images means no downloadable ZIP.
 
-- Your login is stored **only on this computer** (in `config/credentials.json`,
-  which is git-ignored) and is used solely to open the dashboard. It is never
-  sent anywhere else.
-- Leave **"Show the browser while it runs"** checked the first few times so you
-  can watch it work.
+Export status survives page reloads. An interrupted server job is marked failed after restart. Only one export runs at a time. The server listens on this computer's loopback address.
 
-## Output
+## Verification
 
-- The ZIP contains one PNG per keyword named
-  `keyword__2026-07_vs_2026-08.png`, plus a `manifest.txt`.
-- Working files (and debug screenshots if something fails) are left in
-  `output/<jobId>/` — safe to delete.
+`npm test` checks exact months, year rollover, active status, pagination, and report identity. Live verification is also necessary after a MapRanking UI change. The exporter fails instead of silently choosing a different keyword or date when it cannot verify a result.
 
-## Notes & limits
+## Files
 
-- A keyword needs **at least two months of completed scans** to be compared;
-  keywords with only one scan are skipped (and listed in the log).
-- "Active" vs "Paused" is inferred from recency of the last scan (default: a scan
-  within 45 days = active). Tune `activeWindowDays` in
-  `src/mapranking-api.js` if needed.
-- Because it screenshots the real dashboard, a big client (10–15 keywords) takes
-  a few minutes, and a future dashboard redesign may require selector tweaks in
-  `src/exporter.js`. If a run captures nothing, check `output/<jobId>/_debug/`
-  for screenshots showing where it got stuck.
-
-## How it's wired
-
-| File | Role |
-|---|---|
-| `server.js` | Local web server: session, clients, keywords, export jobs, ZIP. |
-| `src/mapranking-api.js` | Read-only dashboard API client (login, clients, per-keyword scan months). |
-| `src/exporter.js` | Playwright automation: drives the dashboard and screenshots each comparison. |
-| `src/compare.js` | Turns a comparison mode into concrete Before/After month pairs. |
-| `public/` | The UI. |
-
-The dashboard API + UI flow are documented from the MtOS integration
-(`E:\motsv7\apps\seoos\src\lib\server\sync\mapranking-client.ts`).
+- `src/mapranking-api.js`: authentication and complete read-only scan retrieval.
+- `src/credentials.js`: MTOS credential discovery.
+- `src/compare.js`: exact month selection, shared with the browser UI.
+- `src/exporter.js`: native dashboard capture and verification.
+- `server.js`: local session, export jobs, manifests, and ZIP download.
+- `public/`: profile and scan selection UI.

@@ -1,73 +1,11 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Heatmap Extractor · Map Ranking</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <header class="topbar">
-      <div class="brand">
-        <span class="dot"></span> Heatmap Extractor
-      </div>
-      <div id="sessionBox" class="session"></div>
-    </header>
-
-    <main class="wrap">
-      <!-- LOGIN -->
-      <section id="loginCard" class="card hidden">
-        <h2>Sign in once</h2>
-        <p class="muted">
-          Your login stays on this computer so you can reopen the extractor and pull the latest comparisons without signing in again.
-        </p>
-        <label>Email<input id="email" type="email" autocomplete="username" placeholder="admin@mapranking.com" /></label>
-        <label>Password<input id="password" type="password" autocomplete="current-password" placeholder="••••••••" /></label>
-        <label class="row"><input id="remember" type="checkbox" /> Remember on this computer</label>
-        <button id="loginBtn" class="primary">Sign in</button>
-        <div id="loginError" class="error"></div>
-      </section>
-
-      <!-- MAIN -->
-      <section id="app" class="hidden">
-        <div class="card">
-          <h2>1 · Choose a client</h2>
-          <div class="field">
-            <input id="clientSearch" list="clientList" placeholder="Search or select a client…" autocomplete="off" />
-            <datalist id="clientList"></datalist>
-            <button id="loadKeywordsBtn" class="primary">Load keywords</button>
-          </div>
-          <div id="clientMeta" class="muted"></div>
-        </div>
-
-        <div id="step2" class="card hidden">
-          <h2>2 · Latest comparisons only</h2>
-          <p class="muted">
-            The extractor now limits itself to active keywords with two completed scans and always pulls the latest current-vs-previous comparison.
-          </p>
-
-          <h3>Keywords <span id="kwCount" class="muted"></span></h3>
-          <div class="kwtools">
-            <button id="selectAll" class="link">Select all</button>
-            <button id="selectNone" class="link">Clear</button>
-          </div>
-          <div id="keywordList" class="kwlist"></div>
-        </div>
-
-        <div id="step3" class="card hidden">
-          <h2>3 · One-click export</h2>
-          <label class="row"><input id="showBrowser" type="checkbox" checked /> Show the browser while it runs (recommended the first time)</label>
-          <button id="exportBtn" class="primary big">Export latest comparisons → ZIP</button>
-          <div id="exportSummary" class="muted"></div>
-
-          <div id="progressBox" class="progress hidden">
-            <div id="log" class="log"></div>
-            <a id="downloadLink" class="primary big hidden" href="#">⬇ Download ZIP</a>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <script src="app.js"></script>
-  </body>
-</html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Heatmap Extractor · MapRanking</title><link rel="stylesheet" href="style.css"></head>
+<body><header class="topbar"><div class="brand"><span class="dot"></span>Heatmap Extractor</div><div id="sessionBox" class="session">Connecting to MTOS 7…</div></header>
+<main class="wrap">
+<section id="loginCard" class="card hidden"><h2>Connect to MapRanking</h2><p class="muted">The tool automatically uses your MTOS 7 MapRanking connection. You can also sign in to another account for this session.</p><label>Email<input id="email" type="email" autocomplete="username"></label><label>Password<input id="password" type="password" autocomplete="current-password"></label><button id="loginBtn" class="primary">Sign in</button> <button id="mtosBtn">Use MTOS 7 connection</button><p id="loginError" class="error"></p></section>
+<section id="app" class="hidden">
+<div class="card"><h2>1 · Choose client profiles</h2><p class="muted">Select one or several profiles. Each profile gets its own folder in the ZIP.</p><input id="clientSearch" placeholder="Search by business name or address…" autocomplete="off"><div id="clientList" class="profile-list"></div><div class="field"><button id="loadKeywordsBtn" class="primary">Load selected profiles</button><span id="clientMeta" class="muted"></span></div></div>
+<div id="step2" class="card hidden"><h2>2 · Choose comparisons</h2><div class="grid2"><div><h3>Scan status</h3><label class="row"><input type="radio" name="status" value="active" checked> Active only</label><label class="row"><input type="radio" name="status" value="paused"> Paused only</label><label class="row"><input type="radio" name="status" value="all"> All</label><p class="muted small">Uses the dashboard's actual paused setting.</p></div><div><h3>Comparison</h3><label class="row"><input type="radio" name="mode" value="current_vs_previous" checked> This month vs last month</label><label class="row"><input type="radio" name="mode" value="since_beginning"> First available month vs latest</label><label class="row"><input type="radio" name="mode" value="all_consecutive"> Every consecutive month</label><label class="row"><input type="radio" name="mode" value="custom"> Pick two months</label><div id="customRange" class="custom hidden"><label>From <select id="beforeMonth"></select></label><label>To <select id="afterMonth"></select></label></div></div></div>
+<p class="muted small">Uses the latest completed scan in each calendar month (UTC). Missing months are reported; older months are never substituted.</p><h3>Tracked scans <span id="kwCount" class="muted"></span></h3><div class="kwtools"><button id="selectAll" class="link">Select all</button><button id="selectNone" class="link">Clear</button></div><div id="keywordList" class="kwlist"></div></div>
+<div id="step3" class="card hidden"><h2>3 · Download client screenshots</h2><p id="exportSummary" class="muted"></p><button id="exportBtn" class="primary big" disabled>Export comparisons → ZIP</button><div id="progressBox" class="progress hidden"><p id="jobStatus" aria-live="polite"></p><div id="log" class="log" aria-live="polite"></div><a id="downloadLink" class="primary big hidden" href="#">Download ZIP</a></div></div>
+</section></main><script type="module" src="app.js"></script></body></html>
