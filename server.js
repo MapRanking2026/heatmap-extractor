@@ -46,6 +46,23 @@ app.use(express.static(path.join(__dirname, "public")));
 // ---- In-memory session ----
 let session = null; // { token, email, password }
 
+function publicSession() {
+  return {
+    loggedIn: !!session,
+    email: session?.email || null,
+    savedCreds: !!loadSavedCreds(),
+  };
+}
+
+async function restoreSavedSession() {
+  if (session) return session;
+  const saved = loadSavedCreds();
+  if (!saved?.email || !saved?.password) return null;
+  const token = await login(saved.email, saved.password);
+  session = { token, email: saved.email, password: saved.password };
+  return session;
+}
+
 function loadSavedCreds() {
   try {
     const raw = fs.readFileSync(CRED_FILE, "utf8");
@@ -64,7 +81,17 @@ function saveCreds(email, password) {
 
 // ---- Session endpoints ----
 app.get("/api/session", (req, res) => {
-  res.json({ loggedIn: !!session, email: session?.email || null, savedCreds: !!loadSavedCreds() });
+  res.json(publicSession());
+});
+
+app.post("/api/session/restore", async (req, res) => {
+  try {
+    await restoreSavedSession();
+    res.json(publicSession());
+  } catch (e) {
+    session = null;
+    res.status(401).json({ error: e instanceof Error ? e.message : "Could not restore the saved session." });
+  }
 });
 
 app.post("/api/session/login", async (req, res) => {

@@ -17,10 +17,9 @@
     <main class="wrap">
       <!-- LOGIN -->
       <section id="loginCard" class="card hidden">
-        <h2>Sign in to the Map Ranking dashboard</h2>
+        <h2>Sign in once</h2>
         <p class="muted">
-          Your login is used only on this computer to open the dashboard and grab the heatmaps.
-          It is never sent anywhere else.
+          Your login stays on this computer so you can reopen the extractor and pull the latest comparisons without signing in again.
         </p>
         <label>Email<input id="email" type="email" autocomplete="username" placeholder="admin@mapranking.com" /></label>
         <label>Password<input id="password" type="password" autocomplete="current-password" placeholder="••••••••" /></label>
@@ -42,29 +41,10 @@
         </div>
 
         <div id="step2" class="card hidden">
-          <h2>2 · What to export</h2>
-
-          <div class="grid2">
-            <div>
-              <h3>Keyword status</h3>
-              <label class="row"><input type="radio" name="status" value="active" checked /> Active only</label>
-              <label class="row"><input type="radio" name="status" value="paused" /> Paused only</label>
-              <label class="row"><input type="radio" name="status" value="all" /> All</label>
-            </div>
-
-            <div>
-              <h3>Comparison</h3>
-              <label class="row"><input type="radio" name="mode" value="current_vs_previous" checked /> This month vs last month</label>
-              <label class="row"><input type="radio" name="mode" value="since_beginning" /> Since the beginning → now</label>
-              <label class="row"><input type="radio" name="mode" value="all_consecutive" /> Every month-over-month (all snapshots)</label>
-              <label class="row"><input type="radio" name="mode" value="custom" /> Pick two months…</label>
-              <div id="customRange" class="custom hidden">
-                <label>From <select id="beforeMonth"></select></label>
-                <label>To <select id="afterMonth"></select></label>
-                <div class="muted small">Month lists come from the selected keywords' available scans.</div>
-              </div>
-            </div>
-          </div>
+          <h2>2 · Latest comparisons only</h2>
+          <p class="muted">
+            The extractor now limits itself to active keywords with two completed scans and always pulls the latest current-vs-previous comparison.
+          </p>
 
           <h3>Keywords <span id="kwCount" class="muted"></span></h3>
           <div class="kwtools">
@@ -75,9 +55,9 @@
         </div>
 
         <div id="step3" class="card hidden">
-          <h2>3 · Export</h2>
+          <h2>3 · One-click export</h2>
           <label class="row"><input id="showBrowser" type="checkbox" checked /> Show the browser while it runs (recommended the first time)</label>
-          <button id="exportBtn" class="primary big">Export heatmap comparisons → ZIP</button>
+          <button id="exportBtn" class="primary big">Export latest comparisons → ZIP</button>
           <div id="exportSummary" class="muted"></div>
 
           <div id="progressBox" class="progress hidden">

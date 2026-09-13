@@ -11,29 +11,34 @@ let clients = [];
 let keywords = [];       // current client's keywords with .months
 let selectedClient = null;
 
+function latestComparableKeywords(list) {
+  return list.filter((k) => k.status === "active" && k.monthCount >= 2);
+}
+
 // ---------- Session ----------
 async function refreshSession() {
   const s = await api("/api/session");
   if (s.loggedIn) {
     showApp(s.email);
   } else {
-    // Try auto-login with saved creds (no prompt) if any exist.
     if (s.savedCreds) {
       try {
-        const r = await api("/api/session/login", { method: "POST", headers: json(), body: "{}" });
+        const r = await api("/api/session/restore", { method: "POST", headers: json(), body: "{}" });
         return showApp(r.email);
       } catch {
-        /* fall through to login form */
+        showLogin("Saved login expired. Sign in once to refresh it.");
+        return;
       }
     }
     showLogin();
   }
 }
 
-function showLogin() {
+function showLogin(message = "") {
   $("loginCard").classList.remove("hidden");
   $("app").classList.add("hidden");
   $("sessionBox").innerHTML = "";
+  $("loginError").textContent = message;
 }
 
 function showApp(email) {
@@ -70,7 +75,7 @@ async function loadClients() {
     clients = r.clients;
     const dl = $("clientList");
     dl.innerHTML = clients.map((c) => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.address || "")}</option>`).join("");
-    $("clientMeta").textContent = `${clients.length} clients in the account.`;
+    $("clientMeta").textContent = `${clients.length} clients ready. Pick one and export the latest comparisons.`;
   } catch (e) {
     $("clientMeta").textContent = e.message;
   }
@@ -86,7 +91,8 @@ $("loadKeywordsBtn").onclick = async () => {
   try {
     const r = await api(`/api/clients/${client.id}/keywords`);
     keywords = r.keywords;
-    $("clientMeta").textContent = `${client.name} · ${keywords.length} keyword(s) found.`;
+    const ready = latestComparableKeywords(keywords);
+    $("clientMeta").textContent = `${client.name} · ${ready.length} active keyword(s) ready for latest comparisons.`;
     renderKeywords();
     $("step2").classList.remove("hidden");
     $("step3").classList.remove("hidden");
@@ -99,31 +105,21 @@ $("loadKeywordsBtn").onclick = async () => {
 };
 
 // ---------- Keywords ----------
-function currentStatus() {
-  return document.querySelector('input[name=status]:checked').value;
-}
-function currentMode() {
-  return document.querySelector('input[name=mode]:checked').value;
-}
-
 function visibleKeywords() {
-  const st = currentStatus();
-  return keywords.filter((k) => st === "all" || k.status === st);
+  return latestComparableKeywords(keywords);
 }
 
 function renderKeywords() {
   const list = visibleKeywords();
   $("kwCount").textContent = `(${list.length} shown)`;
   $("keywordList").innerHTML = list.map((k) => {
-    const canCompare = k.monthCount >= 2;
     return `<label class="kwrow">
-      <input type="checkbox" class="kw" value="${escapeHtml(k.keyword)}" ${canCompare ? "checked" : "disabled"} />
+      <input type="checkbox" class="kw" value="${escapeHtml(k.keyword)}" checked />
       <span class="name">${escapeHtml(k.keyword)}</span>
-      <span class="months">${k.monthCount} month(s)${canCompare ? "" : " · not enough to compare"}</span>
-      <span class="badge ${k.status}">${k.status}</span>
+      <span class="months">Latest: ${escapeHtml(k.months[k.months.length - 2].monthLabel)} → ${escapeHtml(k.months[k.months.length - 1].monthLabel)}</span>
+      <span class="badge ready">ready</span>
     </label>`;
-  }).join("") || `<div class="muted" style="padding:10px">No keywords match this status.</div>`;
-  rebuildMonthPickers();
+  }).join("") || `<div class="muted" style="padding:10px">No active keywords have two completed scans yet.</div>`;
   updateSummary();
 }
 
@@ -134,42 +130,13 @@ function selectedKeywordNames() {
 $("selectAll").onclick = () => { document.querySelectorAll(".kw:not(:disabled)").forEach((c) => (c.checked = true)); updateSummary(); };
 $("selectNone").onclick = () => { document.querySelectorAll(".kw").forEach((c) => (c.checked = false)); updateSummary(); };
 
-document.querySelectorAll('input[name=status]').forEach((r) => (r.onchange = renderKeywords));
-document.querySelectorAll('input[name=mode]').forEach((r) => (r.onchange = () => {
-  $("customRange").classList.toggle("hidden", currentMode() !== "custom");
-  updateSummary();
-}));
 $("keywordList").addEventListener("change", updateSummary);
 
-// Build the From/To month <select>s from the union of months across selected keywords.
-function rebuildMonthPickers() {
-  const names = new Set(selectedKeywordNames().map((s) => s.toLowerCase()));
-  const pool = keywords.filter((k) => !names.size || names.has(k.keyword.toLowerCase()));
-  const monthMap = new Map(); // key -> label
-  for (const k of pool) for (const m of k.months) monthMap.set(m.key, m.monthLabel);
-  const months = [...monthMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  const opts = months.map(([key, label]) => `<option value="${key}">${escapeHtml(label)}</option>`).join("");
-  $("beforeMonth").innerHTML = opts;
-  $("afterMonth").innerHTML = opts;
-  if (months.length >= 2) {
-    $("beforeMonth").value = months[months.length - 2][0];
-    $("afterMonth").value = months[months.length - 1][0];
-  }
-}
-
 function updateSummary() {
-  rebuildMonthPickers();
   const names = selectedKeywordNames();
-  const mode = currentMode();
-  const modeLabel = {
-    current_vs_previous: "this month vs last month",
-    since_beginning: "since the beginning → now",
-    all_consecutive: "every month-over-month",
-    custom: "a custom range",
-  }[mode];
   $("exportSummary").textContent = names.length
-    ? `Will export ${names.length} keyword(s), ${modeLabel}, as PNGs in a ZIP.`
-    : "Select at least one keyword.";
+    ? `Will export the latest current-vs-previous comparison for ${names.length} active keyword(s).`
+    : "Select at least one active keyword.";
   $("exportBtn").disabled = !names.length;
 }
 
@@ -177,8 +144,6 @@ function updateSummary() {
 $("exportBtn").onclick = async () => {
   const names = selectedKeywordNames();
   if (!names.length) return;
-  const mode = currentMode();
-  const params = mode === "custom" ? { beforeKey: $("beforeMonth").value, afterKey: $("afterMonth").value } : {};
 
   $("exportBtn").disabled = true;
   $("progressBox").classList.remove("hidden");
@@ -193,9 +158,8 @@ $("exportBtn").onclick = async () => {
       body: JSON.stringify({
         clientId: selectedClient.id,
         keywords: names,
-        status: currentStatus(),
-        mode,
-        params,
+        status: "active",
+        mode: "current_vs_previous",
         headless: !$("showBrowser").checked,
       }),
     });

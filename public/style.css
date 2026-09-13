@@ -73,6 +73,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .kwrow .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; margin-left: auto; }
 .badge.active { background: #dcfce7; color: var(--good); }
 .badge.paused { background: #fef3c7; color: var(--warn); }
+.badge.ready { background: #dbeafe; color: var(--brand-ink); }
 .kwrow .months { color: var(--muted); font-size: 12px; }
 
 .progress { margin-top: 14px; }
