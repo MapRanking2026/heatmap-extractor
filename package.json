@@ -5,11 +5,10 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "postinstall": "node scripts/install-playwright.mjs",
-    "build": "node scripts/install-playwright.mjs",
     "test": "node --test test/*.test.js"
   },
   "dependencies": {
+    "@sparticuz/chromium": "149.0.0",
     "archiver": "^7.0.1",
     "express": "^4.19.2",
     "playwright": "^1.47.0"

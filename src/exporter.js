@@ -1,28 +1,22 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import {spawnSync} from 'node:child_process';
-import {createRequire} from 'node:module';
 import {slug} from './dateutil.js';
 import {getHeatmap,getReport} from './mapranking-api.js';
 export const DASHBOARD_BASE='https://dashboard.mapranking.com';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const emit=(fn,level,message)=>fn?.({level,message,at:new Date().toISOString()});
-const require=createRequire(import.meta.url);
-let browserPrepared=false;
-function playwrightCli(){
- return path.join(path.dirname(require.resolve('playwright/package.json')),'cli.js');
-}
-function prepareBrowser(onProgress){
- if(process.env.VERCEL!=='1'||browserPrepared)return;
- process.env.PLAYWRIGHT_BROWSERS_PATH ||= path.join('/tmp','playwright-browsers');
- fs.mkdirSync(process.env.PLAYWRIGHT_BROWSERS_PATH,{recursive:true});
- emit(onProgress,'info','Preparing Chromium in the Vercel temporary browser cache.');
- const result=spawnSync(process.execPath,[playwrightCli(),'install','chromium'],{
-  encoding:'utf8',
-  env:{...process.env,PLAYWRIGHT_BROWSERS_PATH:process.env.PLAYWRIGHT_BROWSERS_PATH}
- });
- if(result.status!==0)throw Error(`Playwright browser install failed: ${(result.stderr||result.stdout||'unknown error').trim()}`);
- browserPrepared=true;
+async function launchBrowser(onProgress){
+ const {chromium}=await import('playwright');
+ if(process.env.VERCEL==='1'){
+  emit(onProgress,'info','Launching serverless Chromium for Vercel.');
+  const serverlessChromium=(await import('@sparticuz/chromium')).default;
+  return chromium.launch({
+   args:[...serverlessChromium.args,'--no-sandbox','--disable-setuid-sandbox'],
+   executablePath:await serverlessChromium.executablePath(),
+   headless:serverlessChromium.headless
+  });
+ }
+ return chromium.launch({headless:true});
 }
 export function validateReport(report,target,scan){
  if(report?._id!==scan.reportId||report.heatmap!==target.id||report.business!==target.business.id||report.keyword!==target.keyword)throw Error('Report identity does not match the selected client, scan, and keyword.');
@@ -50,9 +44,7 @@ function containsLabels(source,rendered){
 }
 export async function runExport({session,targets,outDir,onProgress}){
  const files=[],errors=[],records=[];
- prepareBrowser(onProgress);
- const {chromium}=await import('playwright');
- const browser=await chromium.launch(process.env.VERCEL==='1'?{headless:true,args:['--no-sandbox','--disable-setuid-sandbox']}:{headless:true});
+ const browser=await launchBrowser(onProgress);
  try{
   for(const target of targets){
    for(const pair of target.pairs){
