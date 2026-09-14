@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "postinstall": "playwright install chromium",
+    "postinstall": "node scripts/install-playwright.mjs",
+    "build": "node scripts/install-playwright.mjs",
     "test": "node --test test/*.test.js"
   },
   "dependencies": {

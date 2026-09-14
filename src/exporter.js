@@ -1,4 +1,3 @@
-import {chromium} from 'playwright';
 import fs from 'node:fs';
 import path from 'node:path';
 import {slug} from './dateutil.js';
@@ -32,7 +31,9 @@ function containsLabels(source,rendered){
 }
 export async function runExport({session,targets,outDir,onProgress}){
  const files=[],errors=[],records=[];
- const browser=await chromium.launch({headless:true});
+ if(process.env.VERCEL==='1'&&!process.env.PLAYWRIGHT_BROWSERS_PATH)process.env.PLAYWRIGHT_BROWSERS_PATH='0';
+ const {chromium}=await import('playwright');
+ const browser=await chromium.launch(process.env.VERCEL==='1'?{headless:true,args:['--no-sandbox','--disable-setuid-sandbox']}:{headless:true});
  try{
   for(const target of targets){
    for(const pair of target.pairs){
