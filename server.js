@@ -9,14 +9,16 @@ import {loadMtosCredentials} from './src/credentials.js';
 import {resolvePairs,slug} from './src/compare.js';
 import {runExport} from './src/exporter.js';
 const root=path.dirname(fileURLToPath(import.meta.url));
-const outputDir=process.env.HEATMAP_OUTPUT_DIR || path.join(root,'output');
+const isVercel=process.env.VERCEL==='1';
+const outputDir=process.env.HEATMAP_OUTPUT_DIR || (isVercel?path.join('/tmp','heatmap-extractor-output'):path.join(root,'output'));
 fs.mkdirSync(outputDir,{recursive:true});
 const app=express();
 app.use(express.json({limit:'1mb'}));
 app.use((req,res,next)=>{
- if(!/^(127\.0\.0\.1|localhost)(:\d+)?$/.test(req.headers.host||''))return res.status(403).json({error:'Use the local application address.'});
+ if(!isVercel&&!/^(127\.0\.0\.1|localhost)(:\d+)?$/.test(req.headers.host||''))return res.status(403).json({error:'Use the local application address.'});
  const origin=req.headers.origin;
- if(origin && origin!==`http://${req.headers.host}`)return res.status(403).json({error:'Only this local application can make requests.'});
+ const expectedOrigin=isVercel?`https://${req.headers.host}`:`http://${req.headers.host}`;
+ if(origin && origin!==expectedOrigin)return res.status(403).json({error:'Only this application can make requests.'});
  res.setHeader('Cache-Control','no-store');next();
 });
 app.use(express.static(path.join(root,'public')));
@@ -127,4 +129,5 @@ app.get('/api/export/:id/download',(req,res)=>{
 });
 app.use((error,req,res,next)=>res.status(error.status||500).json({error:error.message||'Request failed.'}));
 const port=Number(process.env.PORT)||3000;
-app.listen(port,'127.0.0.1',()=>console.log(`Heatmap Extractor: http://127.0.0.1:${port}`));
+if(!isVercel)app.listen(port,'127.0.0.1',()=>console.log(`Heatmap Extractor: http://127.0.0.1:${port}`));
+export default app;
