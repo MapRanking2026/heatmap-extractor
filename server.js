@@ -118,7 +118,7 @@ app.post('/api/export',route(async(req,res)=>{
 app.get('/api/export/:id',(req,res)=>{
  let job=jobs.get(req.params.id);
  if(!job&&/^[a-f0-9]{16}$/.test(req.params.id)){try{job=JSON.parse(fs.readFileSync(path.join(outputDir,req.params.id,'job.json'),'utf8'));if(!job.done){job.done=true;job.status='error';job.log.push({level:'error',message:'The server restarted before this export finished. Start a new export.'});}jobs.set(job.id,job);}catch{}}
- if(!job)return res.status(404).json({error:'Export not found.'});
+ if(!job)return res.status(404).json({error:'The previous export session expired. Start a new export.'});
  const since=Math.max(0,Number(req.query.since)||0);
  res.json({status:job.status,done:job.done,entries:job.log.slice(since),total:job.log.length,fileCount:job.files.length,expected:job.expected,errors:job.errors,skipped:job.skipped,downloadReady:!!job.zipPath});
 });
